@@ -1,28 +1,36 @@
 package main
 
 import (
+	"strings"
+
+	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 )
 
 type Application struct {
+	gm         GifManager
 	win        *gtk.Window
 	resultList *gtk.ListBox
 	searchbar  *gtk.Entry
 }
 
-func (app *Application) addSearchResultByPath(path string) {
-	gif := &GifEntry{path, nil}
-	app.addSearchResultItem(gif)
+func (app *Application) handleSearch() {
+	searchText, err := app.searchbar.GetText()
+	panicIf(err)
+
+	searchText = strings.TrimSpace(searchText)
+
+	app.resultList.ShowAll()
 }
 
-func (app *Application) addSearchResultItem(item *GifEntry) {
+func (app *Application) addSearchResultItem(pixbuf *gdk.PixbufAnimation) {
 	row, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 10)
 	panicIf(err)
 	icon, err := gtk.ImageNew()
 	panicIf(err)
 	icon.Show()
 
-	icon.SetFromAnimation(item.Start())
+	icon.SetFromAnimation(pixbuf)
 
 	row.Add(icon)
 	app.resultList.Add(row)
@@ -31,6 +39,7 @@ func (app *Application) addSearchResultItem(item *GifEntry) {
 }
 
 func NewApplication() *Application {
+
 	gtk.Init(nil)
 
 	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
@@ -71,21 +80,27 @@ func NewApplication() *Application {
 	layoutList.Add(scroll)
 	win.Add(layoutList)
 
-	// Image
+	gm := GifManager{nil, "", "/home/meyers/Downloads/gifs/", nil}
+	gm.init()
 
 	app := &Application{
+		gm,
 		win,
 		list,
 		entry,
 	}
 
-	app.addSearchResultByPath("/home/meyers/Downloads/gifs/1.gif")
-	app.addSearchResultByPath("/home/meyers/Downloads/gifs/2.gif")
-	app.addSearchResultByPath("/home/meyers/Downloads/gifs/3.gif")
-	app.addSearchResultByPath("/home/meyers/Downloads/gifs/4.gif")
+	// Add all the gifs
+	for _, entry := range gm.GetEntries() {
+		app.addSearchResultItem(entry.pixbuf)
+	}
 
 	win.SetDefaultSize(1024, 1024)
 	win.SetPosition(gtk.WIN_POS_CENTER_ALWAYS)
+
+	entry.Connect("changed", func() {
+		app.handleSearch()
+	})
 
 	return app
 }
@@ -93,13 +108,6 @@ func NewApplication() *Application {
 func (app *Application) Main() {
 	app.win.ShowAll()
 	gtk.Main()
-
-	app.addSearchResultByPath("/home/meyers/Downloads/gifs/5.gif")
-	app.addSearchResultByPath("/home/meyers/Downloads/gifs/6.gif")
-	app.addSearchResultByPath("/home/meyers/Downloads/gifs/7.gif")
-	app.addSearchResultByPath("/home/meyers/Downloads/gifs/8.gif")
-	app.addSearchResultByPath("/home/meyers/Downloads/gifs/9.gif")
-
 }
 
 func main() {
