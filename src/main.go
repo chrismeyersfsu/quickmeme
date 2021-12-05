@@ -32,7 +32,7 @@ func (app *Application) handleTagTextChange(tagText *gtk.Entry, ge GifEntry) fun
 		tagsStr = strings.TrimSpace(tagsStr)
 
 		endsWithNewlineFlag := false
-		if tagsStr[len(tagsStr)-1] == ',' {
+		if len(tagsStr) > 0 && tagsStr[len(tagsStr)-1] == ',' {
 			endsWithNewlineFlag = true
 		}
 		tags := strings.Split(tagsStr, ",")
