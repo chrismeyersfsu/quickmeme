@@ -22,13 +22,21 @@ func (ge *GifEntry) loadPixelBuf() {
 	ge.pixbuf = p
 }
 
+func (gm *GifManager) GetTags(ge *GifEntry) []string {
+	return gm.gifDb.GetTags(ge.gif)
+}
+
+func (gm *GifManager) AddTags(ge *GifEntry, names []string) {
+	gm.gifDb.AddTags(ge.gif, names)
+}
+
 func (gm *GifManager) init() {
 	gm.gifDb = &GifDb{}
 	gm.gifDb.init()
 
 	gif_paths := GetGifPaths(gm.root)
 	for _, gif_path := range gif_paths {
-		gif := gm.gifDb.GetOrCreate(gif_path)
+		gif, _ := gm.gifDb.GetOrCreate(gif_path)
 		ge := GifEntry{gif, nil}
 		ge.loadPixelBuf()
 		gm.entries = append(gm.entries, ge)

@@ -1,9 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
-	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/gtk"
 )
 
@@ -12,6 +12,7 @@ type Application struct {
 	win        *gtk.Window
 	resultList *gtk.ListBox
 	searchbar  *gtk.Entry
+	tagbar     *gtk.Entry
 }
 
 func (app *Application) handleSearch() {
@@ -23,19 +24,43 @@ func (app *Application) handleSearch() {
 	app.resultList.ShowAll()
 }
 
-func (app *Application) addSearchResultItem(pixbuf *gdk.PixbufAnimation) {
+func (app *Application) addSearchResultItem(ge *GifEntry) {
 	row, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 10)
 	panicIf(err)
+
 	icon, err := gtk.ImageNew()
 	panicIf(err)
-	icon.Show()
+	icon.SetFromAnimation(ge.pixbuf)
 
-	icon.SetFromAnimation(pixbuf)
+	tagText, err := gtk.EntryNew()
+	panicIf(err)
 
+	tags := app.gm.GetTags(ge)
+	fmt.Println("The tags are: ", strings.Join(tags, ","))
+
+	tagText.SetText(strings.Join(tags, ","))
+
+	tagText.Connect("changed", func() {
+		tagsStr, err := tagText.GetText()
+		panicIf(err)
+
+		tagsStr = strings.TrimSpace(tagsStr)
+
+		endsWithNewlineFlag := false
+		if tagsStr[len(tagsStr)-1] == ',' {
+			endsWithNewlineFlag = true
+		}
+		tags := strings.Split(tagsStr, ",")
+		if !endsWithNewlineFlag {
+			tags = tags[:len(tags)-1]
+		}
+		fmt.Println("Going to ask to create tags :", strings.Join(tags, ","))
+		app.gm.AddTags(ge, tags)
+	})
+
+	row.Add(tagText)
 	row.Add(icon)
 	app.resultList.Add(row)
-	app.resultList.ShowAll()
-	//app.win.ShowAll()
 }
 
 func NewApplication() *Application {
@@ -66,7 +91,11 @@ func NewApplication() *Application {
 	panicIf(err)
 
 	// searchbar
-	entry, err := gtk.EntryNew()
+	searchbar, err := gtk.EntryNew()
+	panicIf(err)
+
+	// tagbar
+	tagbar, err := gtk.EntryNew()
 	panicIf(err)
 
 	// resultList
@@ -75,7 +104,8 @@ func NewApplication() *Application {
 	list.SetSelectionMode(gtk.SELECTION_SINGLE)
 
 	// window(layout(searchbar, resultList))
-	layoutList.Add(entry)
+	layoutList.Add(searchbar)
+	layoutList.Add(tagbar)
 	scroll.Add(list)
 	layoutList.Add(scroll)
 	win.Add(layoutList)
@@ -87,18 +117,20 @@ func NewApplication() *Application {
 		gm,
 		win,
 		list,
-		entry,
+		searchbar,
+		tagbar,
 	}
 
 	// Add all the gifs
 	for _, entry := range gm.GetEntries() {
-		app.addSearchResultItem(entry.pixbuf)
+		app.addSearchResultItem(&entry)
 	}
+	app.resultList.ShowAll()
 
 	win.SetDefaultSize(1024, 1024)
 	win.SetPosition(gtk.WIN_POS_CENTER_ALWAYS)
 
-	entry.Connect("changed", func() {
+	searchbar.Connect("changed", func() {
 		app.handleSearch()
 	})
 
