@@ -24,23 +24,8 @@ func (app *Application) handleSearch() {
 	app.resultList.ShowAll()
 }
 
-func (app *Application) addSearchResultItem(ge *GifEntry) {
-	row, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 10)
-	panicIf(err)
-
-	icon, err := gtk.ImageNew()
-	panicIf(err)
-	icon.SetFromAnimation(ge.pixbuf)
-
-	tagText, err := gtk.EntryNew()
-	panicIf(err)
-
-	tags := app.gm.GetTags(ge)
-	fmt.Println("The tags are: ", strings.Join(tags, ","))
-
-	tagText.SetText(strings.Join(tags, ","))
-
-	tagText.Connect("changed", func() {
+func (app *Application) handleTagTextChange(tagText *gtk.Entry, ge GifEntry) func() {
+	return func() {
 		tagsStr, err := tagText.GetText()
 		panicIf(err)
 
@@ -54,9 +39,27 @@ func (app *Application) addSearchResultItem(ge *GifEntry) {
 		if !endsWithNewlineFlag {
 			tags = tags[:len(tags)-1]
 		}
-		fmt.Println("Going to ask to create tags :", strings.Join(tags, ","))
-		app.gm.AddTags(ge, tags)
-	})
+		app.gm.AddTags(&ge, tags)
+	}
+}
+
+func (app *Application) addSearchResultItem(ge GifEntry) {
+	row, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 10)
+	panicIf(err)
+
+	icon, err := gtk.ImageNew()
+	panicIf(err)
+	icon.SetFromAnimation(ge.pixbuf)
+
+	tagText, err := gtk.EntryNew()
+	panicIf(err)
+
+	tags := app.gm.GetTags(&ge)
+	fmt.Println("The tags are: ", strings.Join(tags, ","))
+
+	tagText.SetText(strings.Join(tags, ","))
+
+	tagText.Connect("changed", app.handleTagTextChange(tagText, ge))
 
 	row.Add(tagText)
 	row.Add(icon)
@@ -123,7 +126,7 @@ func NewApplication() *Application {
 
 	// Add all the gifs
 	for _, entry := range gm.GetEntries() {
-		app.addSearchResultItem(&entry)
+		app.addSearchResultItem(entry)
 	}
 	app.resultList.ShowAll()
 

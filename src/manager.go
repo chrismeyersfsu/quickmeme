@@ -39,6 +39,7 @@ func (gm *GifManager) init() {
 		gif, _ := gm.gifDb.GetOrCreate(gif_path)
 		ge := GifEntry{gif, nil}
 		ge.loadPixelBuf()
+
 		gm.entries = append(gm.entries, ge)
 	}
 }
