@@ -23,7 +23,7 @@ type GifDb struct {
 	db *gorm.DB
 }
 
-func (gdb *GifDb) AddTags(gif *Gif, names []string) {
+func (gdb *GifDb) SetTags(gif *Gif, names []string) {
 	tagsMap := make(map[string]Tag)
 	notYetCreatedTagNames := []string{}
 

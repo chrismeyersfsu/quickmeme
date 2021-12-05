@@ -12,7 +12,6 @@ type Application struct {
 	win        *gtk.Window
 	resultList *gtk.ListBox
 	searchbar  *gtk.Entry
-	tagbar     *gtk.Entry
 }
 
 func (app *Application) handleSearch() {
@@ -20,6 +19,20 @@ func (app *Application) handleSearch() {
 	panicIf(err)
 
 	searchText = strings.TrimSpace(searchText)
+
+	idx := 0
+	for {
+		if row := app.resultList.GetRowAtIndex(idx); row != nil {
+			app.resultList.Remove(row)
+		} else {
+			break
+		}
+		idx++
+	}
+
+	for _, entry := range app.gm.GetEntries(searchText) {
+		app.addSearchResultItem(entry)
+	}
 
 	app.resultList.ShowAll()
 }
@@ -39,12 +52,12 @@ func (app *Application) handleTagTextChange(tagText *gtk.Entry, ge GifEntry) fun
 		if !endsWithNewlineFlag {
 			tags = tags[:len(tags)-1]
 		}
-		app.gm.AddTags(&ge, tags)
+		app.gm.SetTags(&ge, tags)
 	}
 }
 
 func (app *Application) addSearchResultItem(ge GifEntry) {
-	row, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 10)
+	row, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 10)
 	panicIf(err)
 
 	icon, err := gtk.ImageNew()
@@ -97,10 +110,6 @@ func NewApplication() *Application {
 	searchbar, err := gtk.EntryNew()
 	panicIf(err)
 
-	// tagbar
-	tagbar, err := gtk.EntryNew()
-	panicIf(err)
-
 	// resultList
 	list, err := gtk.ListBoxNew()
 	panicIf(err)
@@ -108,12 +117,11 @@ func NewApplication() *Application {
 
 	// window(layout(searchbar, resultList))
 	layoutList.Add(searchbar)
-	layoutList.Add(tagbar)
 	scroll.Add(list)
 	layoutList.Add(scroll)
 	win.Add(layoutList)
 
-	gm := GifManager{nil, "", "/home/meyers/Downloads/gifs/", nil}
+	gm := GifManager{search: "", root: "/home/meyers/Downloads/gifs/"}
 	gm.init()
 
 	app := &Application{
@@ -121,11 +129,10 @@ func NewApplication() *Application {
 		win,
 		list,
 		searchbar,
-		tagbar,
 	}
 
 	// Add all the gifs
-	for _, entry := range gm.GetEntries() {
+	for _, entry := range gm.GetEntries("") {
 		app.addSearchResultItem(entry)
 	}
 	app.resultList.ShowAll()
