@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/gotk3/gotk3/gdk"
 )
 
@@ -15,7 +18,7 @@ type GifManager struct {
 	search         string
 	root           string
 	gifDb          *GifDb
-	tagGifEntryMap map[string]map[*GifEntry]GifEntry
+	tagGifEntryMap map[string]map[uint]*GifEntry
 }
 
 func (ge *GifEntry) loadPixelBuf() {
@@ -24,12 +27,36 @@ func (ge *GifEntry) loadPixelBuf() {
 	ge.pixbuf = p
 }
 
+func (gm *GifManager) printTagMap() {
+	fmt.Println("Tag Map state:")
+	for k, v := range gm.tagGifEntryMap {
+		fmt.Print(k, " = ", v, " : ")
+		var ids []uint
+		for id := range v {
+			ids = append(ids, id)
+		}
+		fmt.Println(strings.Join(strings.Fields(fmt.Sprint(ids)), ","))
+	}
+}
+
 func (gm *GifManager) updateTagMap(ge *GifEntry, tagsBefore []string, tagsAfter []string) {
+	fmt.Println("Before:")
+	gm.printTagMap()
 	for _, tag := range tagsBefore {
-		if _, ok := gm.tagGifEntryMap[tag][ge]; ok {
-			delete(gm.tagGifEntryMap[tag], ge)
+		if _, ok := gm.tagGifEntryMap[tag][ge.gif.ID]; ok {
+			delete(gm.tagGifEntryMap[tag], ge.gif.ID)
 		}
 	}
+	for _, tag := range tagsAfter {
+		if v, ok := gm.tagGifEntryMap[tag]; ok {
+			v[ge.gif.ID] = ge
+		} else {
+			gm.tagGifEntryMap[tag] = make(map[uint]*GifEntry)
+			gm.tagGifEntryMap[tag][ge.gif.ID] = ge
+		}
+	}
+	fmt.Println("After:")
+	gm.printTagMap()
 }
 
 func (gm *GifManager) GetTags(ge *GifEntry) []string {
@@ -49,6 +76,8 @@ func (gm *GifManager) init() {
 	gm.gifDb = &GifDb{}
 	gm.gifDb.init()
 
+	gm.tagGifEntryMap = make(map[string]map[uint]*GifEntry)
+
 	gif_paths := GetGifPaths(gm.root)
 	for _, gif_path := range gif_paths {
 		gif, _ := gm.gifDb.GetOrCreate(gif_path)
@@ -66,7 +95,7 @@ func (gm *GifManager) GetEntries(search string) []GifEntry {
 	}
 	if val, ok := gm.tagGifEntryMap[search]; ok {
 		for _, ge := range val {
-			results = append(results, ge)
+			results = append(results, *ge)
 		}
 	}
 	return results

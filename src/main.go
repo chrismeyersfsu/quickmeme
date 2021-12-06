@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/gotk3/gotk3/gtk"
@@ -20,14 +19,12 @@ func (app *Application) handleSearch() {
 
 	searchText = strings.TrimSpace(searchText)
 
-	idx := 0
 	for {
-		if row := app.resultList.GetRowAtIndex(idx); row != nil {
+		if row := app.resultList.GetRowAtIndex(0); row != nil {
 			app.resultList.Remove(row)
 		} else {
 			break
 		}
-		idx++
 	}
 
 	for _, entry := range app.gm.GetEntries(searchText) {
@@ -52,7 +49,15 @@ func (app *Application) handleTagTextChange(tagText *gtk.Entry, ge GifEntry) fun
 		if !endsWithNewlineFlag {
 			tags = tags[:len(tags)-1]
 		}
-		app.gm.SetTags(&ge, tags)
+		var tagsFiltered []string
+		for _, tag := range tags {
+			if tag != "" {
+				tag = strings.TrimSpace(tag)
+				tagsFiltered = append(tagsFiltered, tag)
+			}
+		}
+
+		app.gm.SetTags(&ge, tagsFiltered)
 	}
 }
 
@@ -68,14 +73,13 @@ func (app *Application) addSearchResultItem(ge GifEntry) {
 	panicIf(err)
 
 	tags := app.gm.GetTags(&ge)
-	fmt.Println("The tags are: ", strings.Join(tags, ","))
-
-	tagText.SetText(strings.Join(tags, ","))
-
+	if len(tags) > 0 {
+		tagText.SetText(strings.Join(tags, ","))
+	}
 	tagText.Connect("changed", app.handleTagTextChange(tagText, ge))
 
-	row.Add(tagText)
 	row.Add(icon)
+	row.Add(tagText)
 	app.resultList.Add(row)
 }
 
