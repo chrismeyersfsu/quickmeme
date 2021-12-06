@@ -1,16 +1,22 @@
 on:
-  release:
-    types:
-      - released
+  push:
+    tags:
+      - 'v*'
 
 jobs:
-  release-quickmeme:
+  build:
+    name: Release quickmeme
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
+      - name: Checkout code
+        uses: actions/checkout@v2
       - uses: actions/setup-go@v2
         with:
           go-version: '1.16.11' # The Go version to download (if necessary) and use.
       - run: sudo apt-get update
       - run: sudo apt-get install golang-github-gotk3-gotk3-dev -y
-      - run: go build src/main.go
+      - run: cd src && go build -o main
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: src/main
