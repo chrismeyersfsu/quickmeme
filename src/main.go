@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"strings"
 
 	"github.com/gotk3/gotk3/gtk"
@@ -125,7 +126,12 @@ func NewApplication() *Application {
 	layoutList.Add(scroll)
 	win.Add(layoutList)
 
-	gm := GifManager{search: "", root: "/home/meyers/Downloads/gifs/"}
+	gifroot := os.Getenv("GIFROOT")
+	if gifroot == "" {
+		gifroot = "/home/meyers/Downloads/gifs/"
+	}
+
+	gm := GifManager{search: "", root: gifroot}
 	gm.init()
 
 	app := &Application{
