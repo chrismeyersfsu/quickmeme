@@ -60,7 +60,7 @@ func (gdb *GifDb) GetTags(gif *Gif) []string {
 	for _, tag := range tagObjs {
 		tags = append(tags, tag.Name)
 	}
-	fmt.Println(gif.ID, " Returning tags: ", strings.Join(tags, ","))
+	//fmt.Println(gif.ID, " Returning tags: ", strings.Join(tags, ","))
 	return tags
 }
 

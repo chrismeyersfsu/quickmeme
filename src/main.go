@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
 	"github.com/gotk3/gotk3/gtk"
+	"golang.design/x/clipboard"
 )
 
 type Application struct {
@@ -62,6 +64,19 @@ func (app *Application) handleTagTextChange(tagText *gtk.Entry, ge GifEntry) fun
 	}
 }
 
+func (app *Application) handleRowSelected() func() {
+	return func() {
+		i := app.resultList.GetSelectedRow().GetIndex()
+		fmt.Println("Clicked on the row! ", i)
+		if i == -1 {
+			return
+		}
+		url := UploadGifFile(app.gm.entries[i].gif.Path)
+		fmt.Println("URL ", string(url))
+		clipboard.Write(clipboard.FmtText, url)
+	}
+}
+
 func (app *Application) addSearchResultItem(ge GifEntry) {
 	row, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 10)
 	panicIf(err)
@@ -88,9 +103,9 @@ func NewApplication() *Application {
 
 	gtk.Init(nil)
 
+	// window
 	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	panicIf(err)
-
 	win.SetTitle("Simple Example")
 	win.Connect("destroy", func() {
 		gtk.MainQuit()
@@ -141,6 +156,8 @@ func NewApplication() *Application {
 		searchbar,
 	}
 
+	layoutList.Connect("row-activated", app.handleRowSelected())
+
 	// Add all the gifs
 	for _, entry := range gm.GetEntries("") {
 		app.addSearchResultItem(entry)
@@ -149,6 +166,14 @@ func NewApplication() *Application {
 
 	win.SetDefaultSize(1024, 1024)
 	win.SetPosition(gtk.WIN_POS_CENTER_ALWAYS)
+
+	/*
+		win.Connect("clicked", func(window *gtk.Window, event *gdk.Event) {
+			i := app.resultList.GetSelectedRow().GetIndex()
+
+			app.searchbar.GrabFocusWithoutSelecting()
+		})
+	*/
 
 	searchbar.Connect("changed", func() {
 		app.handleSearch()

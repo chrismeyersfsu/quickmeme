@@ -40,8 +40,8 @@ func (gm *GifManager) printTagMap() {
 }
 
 func (gm *GifManager) updateTagMap(ge *GifEntry, tagsBefore []string, tagsAfter []string) {
-	fmt.Println("Before:")
-	gm.printTagMap()
+	//fmt.Println("Before:")
+	//gm.printTagMap()
 	for _, tag := range tagsBefore {
 		if _, ok := gm.tagGifEntryMap[tag][ge.gif.ID]; ok {
 			delete(gm.tagGifEntryMap[tag], ge.gif.ID)
@@ -55,8 +55,8 @@ func (gm *GifManager) updateTagMap(ge *GifEntry, tagsBefore []string, tagsAfter 
 			gm.tagGifEntryMap[tag][ge.gif.ID] = ge
 		}
 	}
-	fmt.Println("After:")
-	gm.printTagMap()
+	//fmt.Println("After:")
+	//gm.printTagMap()
 }
 
 func (gm *GifManager) GetTags(ge *GifEntry) []string {
